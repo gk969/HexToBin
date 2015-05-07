@@ -103,6 +103,7 @@
     <None Include="res\trans.png" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="dispPara.h" />
     <ClInclude Include="HexToBin.h" />
     <ClInclude Include="HexToBinDlg.h" />
     <ClInclude Include="proc.h" />

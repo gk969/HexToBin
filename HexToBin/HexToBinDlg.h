@@ -17,7 +17,7 @@
 #define CLIPBOARD_BUFF_SIZE	4096
 
 
-
+#define OUT_BUFF_SIZE	4096
 
 // CHexToBinDlg ¶Ô»°¿ò
 class CHexToBinDlg : public CDialogEx
@@ -47,8 +47,8 @@ public:
 	CEdit editOut;
 	afx_msg void OnBnClickedButtonTrans();
 	afx_msg void OnBnClickedButtonExit();
-	CComboBox inBase;
-	CComboBox outBase;
+	CComboBox selIn;
+	CComboBox selOut;
 	afx_msg void OnBnClickedButtonClipboard();
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 
@@ -57,7 +57,9 @@ public:
 	BOOL PreTranslateMessage(MSG* pMsg);
 
 	char clipboardBuff[CLIPBOARD_BUFF_SIZE];
-	bool needToMoniClip;
+	CComboBox selOperat;
+
+	char outBuff[OUT_BUFF_SIZE];
+	CButton moniClipboard;
+	CButton writeClipboard;
 };
-
-
