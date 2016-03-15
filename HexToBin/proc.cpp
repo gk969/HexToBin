@@ -105,22 +105,31 @@ void CEditAppendText(CEdit *TarText,  wchar_t *text)
 
 void CEditAppendText(CEdit *TarText, const char *text)
 {
-    wchar_t wcstring[PRINTF_BUFSIZE];
-    MultiByteToWideChar(CP_ACP, 0, text, -1, wcstring, PRINTF_BUFSIZE);
-    CString cstr = wcstring;
+    wchar_t *wcstring=(wchar_t*)malloc(PRINTF_BUFSIZE*2);
+	if(wcstring!=NULL)
+	{
+		MultiByteToWideChar(CP_ACP, 0, text, -1, wcstring, PRINTF_BUFSIZE);
+		CString cstr = wcstring;
     
-    CEditAppendText(TarText,  &cstr);
+		CEditAppendText(TarText,  &cstr);
+
+		free(wcstring);
+	}
 }
 
 void CEditPrintf(CEdit *TarText, const char *fmt, ...)
 {
-    char buffer[PRINTF_BUFSIZE];
-    
-    va_list arg_ptr;
-    va_start(arg_ptr, fmt);
-    vsnprintf_s(buffer, PRINTF_BUFSIZE, fmt, arg_ptr);
-    CEditAppendText(TarText, buffer);
-    va_end(arg_ptr);
+    char *buffer=(char*)malloc(PRINTF_BUFSIZE);
+    if(buffer!=NULL)
+	{
+		va_list arg_ptr;
+		va_start(arg_ptr, fmt);
+		vsnprintf_s(buffer, PRINTF_BUFSIZE, PRINTF_BUFSIZE, fmt, arg_ptr);
+		CEditAppendText(TarText, buffer);
+		va_end(arg_ptr);
+
+		free(buffer);
+	}
 }
 
 

@@ -5,7 +5,7 @@
 
 const char *inDesc[]={"2进制", "10进制", "16进制", "字符串"};
 const char *outDesc[]={"2进制", "10进制", "16进制", "字符串"};
-const char *operatDesc[]={"无", "求和", "异或"};
+const char *operatDesc[]={"无", "求和", "异或", "取反"};
 
 enum
 {
@@ -20,5 +20,6 @@ enum
 {
 	OPERAT_NONE=0,
 	OPERAT_SUM,
-	OPERAT_XOR
+	OPERAT_XOR,
+	OPERAT_NOT
 };

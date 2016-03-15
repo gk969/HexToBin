@@ -14,10 +14,10 @@
 #define CLIPBOARD_CHK_TIME	200
 
 
-#define CLIPBOARD_BUFF_SIZE	4096
+#define CLIPBOARD_BUFF_SIZE	512000
 
 
-#define OUT_BUFF_SIZE	4096
+#define OUT_BUFF_SIZE	512000
 
 // CHexToBinDlg ¶Ô»°¿ò
 class CHexToBinDlg : public CDialogEx
@@ -56,10 +56,11 @@ public:
 	void ToolTipsInit();
 	BOOL PreTranslateMessage(MSG* pMsg);
 
-	char clipboardBuff[CLIPBOARD_BUFF_SIZE];
+	char *clipboardBuff;
 	CComboBox selOperat;
 
-	char outBuff[OUT_BUFF_SIZE];
+	char *outBuff;
 	CButton moniClipboard;
 	CButton writeClipboard;
+	CButton keepWarp;
 };

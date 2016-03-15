@@ -34,6 +34,7 @@ void CHexToBinDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_COMBO_OPERAT, selOperat);
 	DDX_Control(pDX, IDC_CHECK_MONI_CLIPBOARD, moniClipboard);
 	DDX_Control(pDX, IDC_CHECK_WRITE_CLIPBOARD, writeClipboard);
+	DDX_Control(pDX, IDC_CHECK_KEEP_RN, keepWarp);
 }
 
 BEGIN_MESSAGE_MAP(CHexToBinDlg, CDialogEx)
@@ -84,7 +85,15 @@ BOOL CHexToBinDlg::OnInitDialog()
 	}
 	selOperat.SetCurSel(OPERAT_NONE);
 
-	
+	clipboardBuff=(char*)malloc(CLIPBOARD_BUFF_SIZE);
+	outBuff=(char*)malloc(OUT_BUFF_SIZE);
+	if(clipboardBuff==NULL || outBuff==NULL)
+	{
+		MessageBox(L"ÄÚ´æ²»×ã£¡");
+		DestroyWindow();
+		return TRUE;
+	}
+
 	SetTimer(TIM_CLIPBOARD_CHK, CLIPBOARD_CHK_TIME, NULL);
 	clipboardBuff[0]=0;
 
@@ -132,8 +141,17 @@ HCURSOR CHexToBinDlg::OnQueryDragIcon()
 
 void CHexToBinDlg::OnOk(){}
 
-bool nextInputIsValid(char ch, u8 base)
+bool nextInputIsValid(char ch, u8 base, bool needKeepWarp)
 {
+	static char lastChar=0;
+	bool keepSpace=ch==' '&&lastChar==' ';
+	lastChar=ch;
+
+	if(needKeepWarp&&(ch=='\r'||ch=='\n'||keepSpace))
+	{
+		return true;
+	}
+
 	switch(base)
 	{
 	case BASE_2:
@@ -149,17 +167,46 @@ bool nextInputIsValid(char ch, u8 base)
 	}
 }
 
+void outputToCharBuf(char *outBuff, u32 val, u8 outBaseVal, u32 *sPtr)
+{
+	u8 binLen=(val>255)?32:8;
+	switch(outBaseVal)
+	{
+	case BASE_2:
+		
+		for(u8 i=binLen; i>0; i--)
+		{
+			*sPtr+=sprintf_s(outBuff+*sPtr, OUT_BUFF_SIZE-*sPtr, "%d", (val&(1<<(i-1)))?1:0);
+			if((i-1)%8==0 && i!=1)
+			{
+				*sPtr+=sprintf_s(outBuff+*sPtr, OUT_BUFF_SIZE-*sPtr, " ");
+			}
+		}
+		*sPtr+=sprintf_s(outBuff+*sPtr, OUT_BUFF_SIZE-*sPtr, " ");
+		break;
+	case BASE_10:
+		*sPtr+=sprintf_s(outBuff+*sPtr, OUT_BUFF_SIZE-*sPtr, "%03d ", val);
+		break;
+	case BASE_16:
+		*sPtr+=sprintf_s(outBuff+*sPtr, OUT_BUFF_SIZE-*sPtr, "%02X ", val);
+		break;
+	case STRING:
+		*sPtr+=sprintf_s(outBuff+*sPtr, OUT_BUFF_SIZE-*sPtr, "%c", val);
+		break;
+	}
+}
+
 void CHexToBinDlg::OnBnClickedButtonTrans()
 {
 	USES_CONVERSION;
 
+	int needKeepWarp=keepWarp.GetCheck();
 
 	u8 inBaseVal=selIn.GetCurSel();
 	u8 outBaseVal=selOut.GetCurSel();
 	u8 operat=selOperat.GetCurSel();
 
-	u32 sumVal=0;
-	u8 xorVal=0;
+	u32 calVal=0;
 
 	char *inStr=W2A(GetWndText(&editIn));
 	u32 strEnd=((u32)inStr)+strlen(inStr);
@@ -167,78 +214,74 @@ void CHexToBinDlg::OnBnClickedButtonTrans()
 	u32 sPtr=0;
 
 	char *next=inStr;
-	while(!nextInputIsValid(*next, inBaseVal)&&(u32)next<strEnd)next++;
+	while(!nextInputIsValid(*next, inBaseVal, false)&&(u32)next<strEnd)next++;
 	while((u32)next<strEnd)
 	{
 		u8 val;
-		switch(inBaseVal)
+		bool shouldWarp=needKeepWarp&&(*next=='\r'||*next=='\n'||*next==' ');
+		if(shouldWarp)
 		{
-		case BASE_2:
-			val=strtol(next, &next, 2);
-			break;
-			
-		case BASE_10:
-			val=strtol(next, &next, 10);
-			break;
-
-		case BASE_16:
-			val=strtol(next, &next, 16);
-			break;
-			
-		case STRING:
 			val=*next;
 			next++;
-			break;
 		}
-
-		switch(operat)
+		else
 		{
-		case OPERAT_NONE:
-			switch(outBaseVal)
+			switch(inBaseVal)
 			{
 			case BASE_2:
-				u8 i;
-				for(i=8; i>0; i--)
-				{
-					sPtr+=sprintf_s(outBuff+sPtr, OUT_BUFF_SIZE-sPtr, "%d", (val&(1<<(i-1)))?1:0);
-				}
-				sPtr+=sprintf_s(outBuff+sPtr, OUT_BUFF_SIZE-sPtr, " ");
+				val=strtol(next, &next, 2);
 				break;
+			
 			case BASE_10:
-				sPtr+=sprintf_s(outBuff+sPtr, OUT_BUFF_SIZE-sPtr, "%03d ", val);
+				val=strtol(next, &next, 10);
 				break;
+
 			case BASE_16:
-				sPtr+=sprintf_s(outBuff+sPtr, OUT_BUFF_SIZE-sPtr, "%02X ", val);
+				val=strtol(next, &next, 16);
 				break;
+			
 			case STRING:
-				sPtr+=sprintf_s(outBuff+sPtr, OUT_BUFF_SIZE-sPtr, "%c", val);
+				val=*next;
+				next++;
 				break;
 			}
-			break;
-		case OPERAT_SUM:
-			sumVal+=val;
-			break;
-		case OPERAT_XOR:
-			xorVal^=val;
-			break;
 		}
-		while(!nextInputIsValid(*next, inBaseVal)&&(u32)next<strEnd)next++;
+
+		if(shouldWarp)
+		{
+			sPtr+=sprintf_s(outBuff+sPtr, OUT_BUFF_SIZE-sPtr, "%c", val);
+		}
+		else
+		{
+			switch(operat)
+			{
+			case OPERAT_NONE:
+			case OPERAT_NOT:
+				if(operat==OPERAT_NOT)
+				{
+					val=~val;
+				}
+				outputToCharBuf(outBuff, val, outBaseVal, &sPtr);
+				break;
+			case OPERAT_SUM:
+				calVal+=val;
+				break;
+			case OPERAT_XOR:
+				calVal^=val;
+				break;
+			}
+		}
+		while(!nextInputIsValid(*next, inBaseVal, needKeepWarp)&&(u32)next<strEnd)next++;
 	}
 
 	editOut.SetWindowText(L"");
-	switch(operat)
+
+	if(operat==OPERAT_SUM || operat==OPERAT_XOR)
 	{
-	case OPERAT_NONE:
-		outBuff[sPtr]=0;
-		editOut.SetWindowText(A2W(outBuff));
-		break;
-	case OPERAT_SUM:
-		CEditPrintf(&editOut, "%08X", sumVal);
-		break;
-	case OPERAT_XOR:
-		CEditPrintf(&editOut, "%02X", xorVal);
-		break;
+		outputToCharBuf(outBuff, calVal, outBaseVal, &sPtr);
 	}
+	outBuff[sPtr]=0;
+	editOut.SetWindowText(A2W(outBuff));
 }
 
 
