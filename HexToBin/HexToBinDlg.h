@@ -49,12 +49,7 @@ public:
 	afx_msg void OnBnClickedButtonExit();
 	CComboBox selIn;
 	CComboBox selOut;
-	afx_msg void OnBnClickedButtonClipboard();
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
-
-	CToolTipCtrl  ToolTips;
-	void ToolTipsInit();
-	BOOL PreTranslateMessage(MSG* pMsg);
 
 	char *clipboardBuff;
 	CComboBox selOperat;
@@ -63,4 +58,5 @@ public:
 	CButton moniClipboard;
 	CButton writeClipboard;
 	CButton keepWarp;
+	CStatic frameTextInput;
 };
